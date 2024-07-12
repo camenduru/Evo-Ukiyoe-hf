@@ -6,13 +6,11 @@ from diffusers import (
     StableDiffusionXLPipeline,
     UNet2DConditionModel,
 )
-from diffusers.loaders import LoraLoaderMixin
 from huggingface_hub import hf_hub_download
 import safetensors
 import torch
 from tqdm import tqdm
 from transformers import AutoTokenizer, CLIPTextModelWithProjection
-
 
 # Base models (fine-tuned from SDXL-1.0)
 SDXL_REPO = "stabilityai/stable-diffusion-xl-base-1.0"
@@ -108,7 +106,7 @@ def split_conv_attn(weights):
     return {"conv": conv_tensors, "attn": attn_tensors}
 
 
-def load_evoukiyoe(device="cuda") -> StableDiffusionXLPipeline:
+def load_evo_ukiyoe(device="cuda") -> StableDiffusionXLPipeline:
     # Load base models
     sdxl_weights = split_conv_attn(load_from_pretrained(SDXL_REPO, device=device))
     dpo_weights = split_conv_attn(
@@ -147,26 +145,15 @@ def load_evoukiyoe(device="cuda") -> StableDiffusionXLPipeline:
     unet = UNet2DConditionModel.from_config(unet_config).to(device=device)
     unet.load_state_dict({**new_conv, **new_attn})
 
-    # Load LoRA weights
-    state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(
-        pretrained_model_name_or_path_or_dict=UKIYOE_REPO
-    )
-    LoraLoaderMixin.load_lora_into_unet(state_dict, network_alphas, unet)
-    unet.fuse_lora(1.0)
-
     # Load other modules
     text_encoder = CLIPTextModelWithProjection.from_pretrained(
-        JSDXL_REPO,
-        subfolder="text_encoder",
-        torch_dtype=torch.float16,
-        variant="fp16",
+        JSDXL_REPO, subfolder="text_encoder", torch_dtype=torch.float16, variant="fp16",
     )
     tokenizer = AutoTokenizer.from_pretrained(
-        JSDXL_REPO,
-        subfolder="tokenizer",
-        use_fast=False,
+        JSDXL_REPO, subfolder="tokenizer", use_fast=False,
     )
 
+    # Load pipeline
     pipe = StableDiffusionXLPipeline.from_pretrained(
         SDXL_REPO,
         unet=unet,
@@ -176,4 +163,8 @@ def load_evoukiyoe(device="cuda") -> StableDiffusionXLPipeline:
         variant="fp16",
     )
     pipe = pipe.to(device, dtype=torch.float16)
+
+    # Load Evo-Ukiyoe weights
+    pipe.load_lora_weights(UKIYOE_REPO)
+    pipe.fuse_lora(lora_scale=1.0)
     return pipe
