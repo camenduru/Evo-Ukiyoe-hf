@@ -6,14 +6,14 @@ import numpy as np
 import spaces
 import torch
 
-from evoukiyoe_v1 import load_evoukiyoe
+from evo_ukiyoe_v1 import load_evo_ukiyoe
 
 
-DESCRIPTION = """# 🐟 EvoUkiyo-e
+DESCRIPTION = """# 🐟 Evo-Ukiyoe
 🤗 [モデル一覧](https://huggingface.co/SakanaAI) | 📚 [技術レポート](https://arxiv.org/abs/2403.13187) | 📝 [ブログ](https://sakana.ai/evosdxl-jp/) | 🐦 [Twitter](https://twitter.com/SakanaAILabs)
 
-[EvoUkiyo-e](https://huggingface.co/SakanaAI/EvoUkiyo-e-v1)は[Sakana AI](https://sakana.ai/)が教育目的で開発した日本特化の高速な画像生成モデルです。
-入力した日本語プロンプトに沿った画像を生成することができます。より詳しくは、上記のブログをご参照ください。
+[Evo-Ukiyoe](https://huggingface.co/SakanaAI/Evo-Ukiyoe-v1)は[Sakana AI](https://sakana.ai/)が教育目的で開発した浮世絵に特化した画像生成モデルです。
+入力した日本語プロンプトに沿った浮世絵風の画像を生成することができます。より詳しくは、上記のブログをご参照ください。
 """
 if not torch.cuda.is_available():
     DESCRIPTION += "\n<p>Running on CPU 🥶 This demo may not work on CPU.</p>"
@@ -46,7 +46,7 @@ if SAFETY_CHECKER:
         return images, has_nsfw_concepts
 
 
-pipe = load_evoukiyoe("cpu").to(device)
+pipe = load_evo_ukiyoe("cpu").to(device)
 
 
 def randomize_seed_fn(seed: int, randomize_seed: bool) -> int:
@@ -68,11 +68,12 @@ def generate(
     generator = torch.Generator().manual_seed(seed)
 
     images = pipe(
-        prompt=prompt + "輻の浮世絵。",
+        prompt=prompt + "最高品質の輻の浮世絵。",
+        negative_prompt="",
         width=1024,
         height=1024,
         guidance_scale=8.0,
-        num_inference_steps=40,
+        num_inference_steps=50,
         generator=generator,
         num_images_per_prompt=NUM_IMAGES_PER_PROMPT,
         output_type="pil",
@@ -87,12 +88,9 @@ def generate(
 
 
 examples = [
-    ["魚が泳いでいる。"],
-    ["熊が本を読んでいる。"],
-    ["猫が畳の上で寝ている。"],
-    ["象が刀を持っている。"],
-    ["男性と女性が戦っている。"],
+    ["鶴が庭に立っている。雪が降っている。"],
     ["富士山、桜の木、川と人々の風景。"],
+    ["熊が本を読んでいる。"],
 ]
 
 css = """
@@ -105,7 +103,7 @@ with gr.Blocks(css=css) as demo:
         with gr.Row():
             prompt = gr.Textbox(placeholder="日本語でプロンプトを入力してください。", show_label=False, scale=8)
             submit = gr.Button(scale=0)
-        result = gr.Image(label="EvoUkiyo-eからの生成結果", show_label=False)
+        result = gr.Image(label="Evo-Ukiyoeからの生成結果", type="pil", show_label=False)
     with gr.Accordion("詳細設定", open=False):
         seed = gr.Slider(label="シード値", minimum=0, maximum=MAX_SEED, step=1, value=0)
         randomize_seed = gr.Checkbox(label="ランダムにシード値を決定", value=True)
