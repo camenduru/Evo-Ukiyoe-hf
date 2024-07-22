@@ -51,7 +51,7 @@ if SAFETY_CHECKER:
         return images, has_nsfw_concepts
 
 
-pipe = load_evo_ukiyoe(device)
+pipe = load_evo_ukiyoe("cpu")
 pipe.scheduler = EulerDiscreteScheduler.from_config(
     pipe.scheduler.config, use_karras_sigmas=True,
 )
