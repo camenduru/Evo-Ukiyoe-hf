@@ -72,7 +72,7 @@ def randomize_seed_fn(seed: int, randomize_seed: bool) -> int:
 @torch.inference_mode()
 def generate(
     prompt: str,
-    negative_prompt: str = None,
+    negative_prompt: str = "",
     seed: int = 0,
     randomize_seed: bool = False,
     progress=gr.Progress(track_tqdm=True),
