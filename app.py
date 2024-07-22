@@ -55,6 +55,7 @@ pipe = load_evo_ukiyoe(device)
 pipe.scheduler = EulerDiscreteScheduler.from_config(
     pipe.scheduler.config, use_karras_sigmas=True,
 )
+pipe.to(device=device, dtype=torch.float16)
 # pipe.unet.to(memory_format=torch.channels_last)
 # pipe.vae.to(memory_format=torch.channels_last)
 # # Compile the UNet and VAE.
@@ -77,7 +78,6 @@ def generate(
     randomize_seed: bool = False,
     progress=gr.Progress(track_tqdm=True),
 ):
-    pipe.to(device)
     seed = int(randomize_seed_fn(seed, randomize_seed))
     generator = torch.Generator().manual_seed(seed)
 
